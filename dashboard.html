@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Job Filter Dashboard</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 16px; background: #fafafa; color: #1a1a1a; }
+  h1 { font-size: 1.4rem; }
+  .controls { margin-bottom: 20px; display: flex; gap: 12px; align-items: center; }
+  .job { background: white; border: 1px solid #e2e2e2; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+  .job h3 { margin: 0 0 4px 0; }
+  .job h3 a { color: #1a1a1a; text-decoration: none; }
+  .job h3 a:hover { text-decoration: underline; }
+  .meta { color: #666; font-size: 0.85rem; margin-bottom: 8px; }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; background: #eee; }
+  .tag.senior { background: #ffe4b3; }
+  .tag.mid { background: #d6f0ff; }
+  .tag.junior { background: #e0ffe0; }
+  .tag.remote { background: #d9f2d9; }
+  .spam { opacity: 0.5; }
+  #empty { color: #888; padding: 40px 0; text-align: center; }
+</style>
+</head>
+<body>
+  <h1>Filtered Job Listings</h1>
+  <div class="controls">
+    <label><input type="checkbox" id="hideSpam" checked> Hide recruiter spam</label>
+    <label><input type="checkbox" id="onlyRelevant" checked> Only relevant roles</label>
+  </div>
+  <div id="jobs"></div>
+  <div id="empty" style="display:none">No jobs match. Run <code>python ingest.py</code> first, and serve this folder (e.g. <code>python -m http.server</code>) so jobs.json can load.</div>
+
+<script>
+async function loadJobs() {
+  try {
+    const res = await fetch('jobs.json');
+    return await res.json();
+  } catch (e) {
+    return [];
+  }
+}
+
+function render(jobs) {
+  const hideSpam = document.getElementById('hideSpam').checked;
+  const onlyRelevant = document.getElementById('onlyRelevant').checked;
+
+  let filtered = jobs.filter(j => {
+    if (hideSpam && j.recruiter_spam > 0.5) return false;
+    if (onlyRelevant && j.relevant < 0.5) return false;
+    return true;
+  });
+
+  filtered.sort((a, b) => (b.relevant || 0) - (a.relevant || 0));
+
+  const container = document.getElementById('jobs');
+  const empty = document.getElementById('empty');
+
+  if (filtered.length === 0) {
+    container.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  container.innerHTML = filtered.map(j => `
+    <div class="job">
+      <h3><a href="${j.url}" target="_blank">${j.title}</a></h3>
+      <div class="meta">${j.company} · ${j.location} · ${j.created ? j.created.split('T')[0] : ''}</div>
+      <div class="tags">
+        <span class="tag ${j.seniority}">${j.seniority}</span>
+        ${j.remote > 0.5 ? '<span class="tag remote">remote-friendly</span>' : ''}
+        <span class="tag">relevance ${(j.relevant * 100).toFixed(0)}%</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+loadJobs().then(jobs => {
+  render(jobs);
+  document.getElementById('hideSpam').addEventListener('change', () => render(jobs));
+  document.getElementById('onlyRelevant').addEventListener('change', () => render(jobs));
+});
+</script>
+</body>
+</html>
