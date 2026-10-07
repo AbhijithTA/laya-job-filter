@@ -2,114 +2,413 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Job Filter Dashboard</title>
 <style>
-  body { font-family: -apple-system, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 16px; background: #fafafa; color: #1a1a1a; }
-  h1 { font-size: 1.4rem; }
-  .toolbar { margin-bottom: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-  button { padding: 8px 14px; border: 1px solid #ccc; border-radius: 6px; background: white; cursor: pointer; font-size: 0.9rem; }
-  button:hover { background: #f0f0f0; }
-  button:disabled { opacity: 0.5; cursor: default; }
-  #status { font-size: 0.85rem; color: #666; }
-  .job { background: white; border: 1px solid #e2e2e2; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
-  .job h3 { margin: 0 0 4px 0; }
-  .job h3 a { color: #1a1a1a; text-decoration: none; }
-  .job h3 a:hover { text-decoration: underline; }
-  .meta { color: #666; font-size: 0.85rem; margin-bottom: 8px; }
-  .tags { display: flex; gap: 6px; flex-wrap: wrap; }
-  .tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; background: #eee; }
-  .tag.senior { background: #ffe4b3; }
-  .tag.mid { background: #d6f0ff; }
-  .tag.junior { background: #e0ffe0; }
-  .tag.remote { background: #d9f2d9; }
-  #empty { color: #888; padding: 40px 0; text-align: center; }
-  .panel { display: none; background: white; border: 1px solid #e2e2e2; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
-  .panel textarea { width: 100%; height: 260px; font-family: monospace; font-size: 0.8rem; box-sizing: border-box; }
-  .panel-actions { margin-top: 10px; display: flex; gap: 10px; align-items: center; }
-  .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
-  .field label { font-size: 0.8rem; color: #444; font-weight: 500; }
-  .field input { padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; }
-  .field-row { display: flex; gap: 12px; }
-  .field-row .field { flex: 1; }
+  :root {
+    --bg: #1e1f24;
+    --surface: #2a2c33;
+    --surface-hover: #33353d;
+    --border: #3a3c44;
+    --border-strong: #4a4c55;
+    --text: #e4e4e7;
+    --text-muted: #9ca3af;
+    --accent: #6366f1;
+    --accent-hover: #7c7ff2;
+    --success: #4ade80;
+    --danger: #f87171;
+    --warn: #fbbf24;
+    --radius: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.4);
+  }
 
-  #progressWrap { display: none; height: 4px; background: #e2e2e2; border-radius: 2px; overflow: hidden; margin-bottom: 12px; }
-  #progressBar { height: 100%; width: 40%; background: #4a90e2; border-radius: 2px; animation: indeterminate 1.2s ease-in-out infinite; }
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 960px;
+    margin: 40px auto;
+    padding: 0 20px 60px;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  h1 { font-size: 1.5rem; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .subtitle { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 24px; }
+
+  #progressWrap {
+    display: none;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  #progressBar {
+    height: 100%;
+    width: 40%;
+    background: var(--accent);
+    border-radius: 2px;
+    animation: indeterminate 1.2s ease-in-out infinite;
+  }
   @keyframes indeterminate {
     0%   { transform: translateX(-100%); }
     50%  { transform: translateX(100%); }
     100% { transform: translateX(250%); }
   }
+
+  .toolbar {
+    margin-bottom: 24px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  button {
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    font-family: inherit;
+    transition: background 0.12s, border-color 0.12s, transform 0.06s;
+  }
+  button:hover:not(:disabled) { background: var(--surface-hover); border-color: var(--border-strong); }
+  button:active:not(:disabled) { transform: translateY(1px); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+  button.primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+  button.ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-muted);
+  }
+  button.ghost:hover:not(:disabled) { background: var(--surface); color: var(--text); }
+
+  .checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    user-select: none;
+  }
+  .checkbox-label input { accent-color: var(--accent); cursor: pointer; }
+  .checkbox-label:hover { color: var(--text); }
+
+  .job {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+    transition: border-color 0.12s, transform 0.08s;
+  }
+  .job:hover { border-color: var(--border-strong); }
+  .job h3 { margin: 0 0 6px; font-size: 1rem; font-weight: 600; }
+  .job h3 a { color: var(--text); text-decoration: none; }
+  .job h3 a:hover { color: var(--accent-hover); }
+
+  .meta { color: var(--text-muted); font-size: 0.83rem; margin-bottom: 10px; }
+
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    font-size: 0.75rem;
+    padding: 3px 9px;
+    border-radius: 12px;
+    background: var(--surface-hover);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    font-weight: 500;
+  }
+  .tag.senior { background: rgba(251,191,36,0.12); color: #fbbf24; border-color: rgba(251,191,36,0.25); }
+  .tag.mid    { background: rgba(99,102,241,0.14); color: #a5b4fc; border-color: rgba(99,102,241,0.3); }
+  .tag.junior { background: rgba(74,222,128,0.12); color: #86efac; border-color: rgba(74,222,128,0.25); }
+  .tag.remote { background: rgba(74,222,128,0.12); color: #86efac; border-color: rgba(74,222,128,0.25); }
+
+  #empty {
+    color: var(--text-muted);
+    padding: 60px 20px;
+    text-align: center;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+  }
+  #empty .icon { font-size: 2rem; display: block; margin-bottom: 8px; opacity: 0.5; }
+
+  dialog {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0;
+    width: min(560px, calc(100vw - 32px));
+    box-shadow: var(--shadow-lg);
+  }
+  dialog::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+  }
+  .dialog-header {
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .dialog-header h2 { margin: 0 0 4px; font-size: 1.05rem; font-weight: 600; }
+  .dialog-header p { margin: 0; font-size: 0.82rem; color: var(--text-muted); line-height: 1.45; }
+  .dialog-body { padding: 18px 22px; }
+  .dialog-footer {
+    padding: 14px 22px 18px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .field label { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+  .field input, .field textarea {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.875rem;
+    font-family: inherit;
+    transition: border-color 0.12s;
+  }
+  .field input:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .field textarea {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 0.8rem;
+    min-height: 280px;
+    resize: vertical;
+    line-height: 1.5;
+  }
+  .field-row { display: flex; gap: 12px; }
+  .field-row .field { flex: 1; margin-bottom: 0; }
+  .field-row { margin-bottom: 14px; }
+
+  .hint { font-size: 0.75rem; color: var(--text-muted); margin-top: -4px; }
+  .hint code {
+    background: var(--bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    border: 1px solid var(--border);
+  }
+
+  #loader {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(30, 31, 36, 0.85);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 18px;
+  }
+  #loader.active { display: flex; }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #loaderText {
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 500;
+    min-height: 1.4em;
+    transition: opacity 0.2s;
+  }
+
+  #toastContainer {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 200;
+    pointer-events: none;
+  }
+  .toast {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    color: var(--text);
+    box-shadow: var(--shadow-lg);
+    max-width: 340px;
+    animation: toast-in 0.22s ease-out;
+    pointer-events: auto;
+  }
+  .toast.success { border-left-color: var(--success); }
+  .toast.error   { border-left-color: var(--danger); }
+  .toast.leaving { animation: toast-out 0.2s ease-in forwards; }
+
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(8px) translateX(8px); }
+    to   { opacity: 1; transform: translateY(0) translateX(0); }
+  }
+  @keyframes toast-out {
+    to { opacity: 0; transform: translateY(8px) translateX(8px); }
+  }
 </style>
 </head>
 <body>
   <h1>Filtered Job Listings</h1>
+  <div class="subtitle">Pulls from Adzuna, classifies with Laya, hides the noise.</div>
 
   <div id="progressWrap"><div id="progressBar"></div></div>
 
   <div class="toolbar">
-    <button id="refreshBtn">Refetch Jobs</button>
-    <button id="toggleProfileBtn">Search Profile</button>
-    <button id="toggleCriteriaBtn">Edit Criteria</button>
-    <label><input type="checkbox" id="hideSpam" checked> Hide recruiter spam</label>
-    <label><input type="checkbox" id="onlyRelevant" checked> Only relevant roles</label>
-    <span id="status"></span>
-  </div>
-
-  <div class="panel" id="profilePanel">
-    <p style="margin-top:0; font-size:0.85rem; color:#555;">
-      What to search for on Adzuna. Changes apply on the next Refetch.
-    </p>
-    <div class="field">
-      <label for="profileWhat">Job title / keywords</label>
-      <input type="text" id="profileWhat" placeholder="e.g. backend developer, react developer">
-    </div>
-    <div class="field-row">
-      <div class="field">
-        <label for="profileWhere">Location</label>
-        <input type="text" id="profileWhere" placeholder="e.g. kochi, remote, bangalore">
-      </div>
-      <div class="field">
-        <label for="profileMaxDays">Max days old</label>
-        <input type="number" id="profileMaxDays" min="1" max="365" value="30">
-      </div>
-    </div>
-    <div class="panel-actions">
-      <button id="saveProfileBtn">Save Profile</button>
-      <span id="profileStatus" style="font-size:0.85rem; color:#666;"></span>
-    </div>
-  </div>
-
-  <div class="panel" id="criteriaPanel">
-    <p style="margin-top:0; font-size:0.85rem; color:#555;">
-      Edit the questions Laya asks about each job (JSON). Each key needs
-      <code>type</code> ("noul" or "choice") and <code>instructions</code>;
-      "choice" also needs a <code>criteria</code> object of option: description.
-    </p>
-    <textarea id="criteriaText"></textarea>
-    <div class="panel-actions">
-      <button id="saveCriteriaBtn">Save Criteria</button>
-      <span id="criteriaStatus" style="font-size:0.85rem; color:#666;"></span>
-    </div>
+    <button id="refreshBtn" class="primary">Refetch Jobs</button>
+    <button id="profileBtn">Search Profile</button>
+    <button id="criteriaBtn">Edit Criteria</button>
+    <label class="checkbox-label"><input type="checkbox" id="hideSpam" checked> Hide recruiter spam</label>
+    <label class="checkbox-label"><input type="checkbox" id="onlyRelevant" checked> Only relevant roles</label>
   </div>
 
   <div id="jobs"></div>
-  <div id="empty" style="display:none">No jobs match yet. Click "Refetch Jobs" to pull listings.</div>
+  <div id="empty">
+    <span class="icon">◇</span>
+    No jobs match yet. Click "Refetch Jobs" to pull listings.
+  </div>
+
+  <dialog id="profileDialog">
+    <form method="dialog">
+      <div class="dialog-header">
+        <h2>Search Profile</h2>
+        <p>What to search for on Adzuna. Changes apply on the next Refetch.</p>
+      </div>
+      <div class="dialog-body">
+        <div class="field">
+          <label for="profileWhat">Job title / keywords</label>
+          <input type="text" id="profileWhat" placeholder="e.g. backend developer, react developer">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="profileWhere">Location</label>
+            <input type="text" id="profileWhere" placeholder="e.g. kochi, remote, bangalore">
+          </div>
+          <div class="field">
+            <label for="profileMaxDays">Max days old</label>
+            <input type="number" id="profileMaxDays" min="1" max="365" value="30">
+          </div>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button type="button" class="ghost" data-close>Cancel</button>
+        <button type="button" id="saveProfileBtn" class="primary">Save Profile</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="criteriaDialog">
+    <form method="dialog">
+      <div class="dialog-header">
+        <h2>Edit Criteria</h2>
+        <p>
+          The questions Laya asks about each job. Each key needs a
+          <code>type</code> ("noul" or "choice") and <code>instructions</code>;
+          "choice" also needs a <code>criteria</code> object of option → description.
+        </p>
+      </div>
+      <div class="dialog-body">
+        <div class="field">
+          <label for="criteriaText">Criteria JSON</label>
+          <textarea id="criteriaText" spellcheck="false"></textarea>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button type="button" class="ghost" data-close>Cancel</button>
+        <button type="button" id="saveCriteriaBtn" class="primary">Save Criteria</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="loader">
+    <div class="spinner"></div>
+    <div id="loaderText">Fetching…</div>
+  </div>
+
+  <div id="toastContainer"></div>
 
 <script>
 let allJobs = [];
+
+function toast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = message;
+  container.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('leaving');
+    setTimeout(() => el.remove(), 220);
+  }, 3200);
+}
+
+const loaderStatuses = [
+  'Fetching from Adzuna…',
+  'Reading job descriptions…',
+  'Classifying with Laya…',
+  'Saving results…',
+];
+let loaderInterval = null;
+
+function showLoader() {
+  const loader = document.getElementById('loader');
+  const text = document.getElementById('loaderText');
+  let i = 0;
+  text.textContent = loaderStatuses[0];
+  loader.classList.add('active');
+  loaderInterval = setInterval(() => {
+    i = (i + 1) % loaderStatuses.length;
+    text.style.opacity = 0;
+    setTimeout(() => {
+      text.textContent = loaderStatuses[i];
+      text.style.opacity = 1;
+    }, 150);
+  }, 1200);
+}
+
+function hideLoader() {
+  document.getElementById('loader').classList.remove('active');
+  if (loaderInterval) { clearInterval(loaderInterval); loaderInterval = null; }
+}
 
 async function loadJobs() {
   const res = await fetch('/jobs');
   allJobs = await res.json();
   render();
-}
-
-async function loadProfile() {
-  const res = await fetch('/profile');
-  const profile = await res.json();
-  document.getElementById('profileWhat').value = profile.what || '';
-  document.getElementById('profileWhere').value = profile.where || '';
-  document.getElementById('profileMaxDays').value = profile.max_days_old || 30;
 }
 
 function render() {
@@ -135,7 +434,7 @@ function render() {
 
   container.innerHTML = filtered.map(j => `
     <div class="job">
-      <h3><a href="${j.url}" target="_blank">${j.title}</a></h3>
+      <h3><a href="${j.url}" target="_blank" rel="noopener">${j.title}</a></h3>
       <div class="meta">${j.company} · ${j.location} · ${j.created ? j.created.split('T')[0] : ''}</div>
       <div class="tags">
         <span class="tag ${j.seniority || ''}">${j.seniority || '?'}</span>
@@ -148,100 +447,102 @@ function render() {
 
 async function refetchJobs() {
   const btn = document.getElementById('refreshBtn');
-  const status = document.getElementById('status');
   const progress = document.getElementById('progressWrap');
 
   btn.disabled = true;
   progress.style.display = 'block';
-  status.textContent = 'Fetching and classifying… this can take a few seconds.';
+  showLoader();
 
   const startedAt = Date.now();
   try {
     const res = await fetch('/refresh', { method: 'POST' });
     const result = await res.json();
     const elapsed = ((Date.now() - startedAt) / 1000).toFixed(1);
-    status.textContent = `Fetched ${result.fetched}, added ${result.added} new. Total: ${result.total}. Took ${elapsed}s.`;
+    toast(`Fetched ${result.fetched}, added ${result.added} new (${elapsed}s).`, 'success');
     await loadJobs();
   } catch (e) {
-    status.textContent = 'Refresh failed — check the server terminal.';
+    toast('Refresh failed — check the server terminal.', 'error');
   } finally {
     btn.disabled = false;
     progress.style.display = 'none';
+    hideLoader();
   }
 }
 
-function togglePanel(id) {
-  const panel = document.getElementById(id);
-  const isHidden = panel.style.display === 'none' || !panel.style.display;
-  panel.style.display = isHidden ? 'block' : 'none';
-  return isHidden;
-}
-
-async function toggleProfilePanel() {
-  const shown = togglePanel('profilePanel');
-  if (shown) await loadProfile();
-}
-
-async function toggleCriteriaPanel() {
-  const shown = togglePanel('criteriaPanel');
-  if (shown) {
-    const res = await fetch('/criteria');
-    const criteria = await res.json();
-    document.getElementById('criteriaText').value = JSON.stringify(criteria, null, 2);
-  }
+async function openProfileDialog() {
+  const res = await fetch('/profile');
+  const profile = await res.json();
+  document.getElementById('profileWhat').value = profile.what || '';
+  document.getElementById('profileWhere').value = profile.where || '';
+  document.getElementById('profileMaxDays').value = profile.max_days_old || 30;
+  document.getElementById('profileDialog').showModal();
 }
 
 async function saveProfile() {
-  const statusEl = document.getElementById('profileStatus');
   const payload = {
     what: document.getElementById('profileWhat').value.trim(),
     where: document.getElementById('profileWhere').value.trim(),
     max_days_old: parseInt(document.getElementById('profileMaxDays').value, 10) || 30,
   };
   if (!payload.what) {
-    statusEl.textContent = 'Job title / keywords is required.';
+    toast('Job title / keywords is required.', 'error');
     return;
   }
-  statusEl.textContent = 'Saving…';
   const res = await fetch('/profile', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  statusEl.textContent = res.ok
-    ? 'Saved. Click Refetch to pull new listings with this profile.'
-    : 'Save failed — check the server terminal.';
+  if (res.ok) {
+    toast('Profile saved. Refetch to pull new listings.', 'success');
+    document.getElementById('profileDialog').close();
+  } else {
+    toast('Save failed — check the server terminal.', 'error');
+  }
+}
+
+async function openCriteriaDialog() {
+  const res = await fetch('/criteria');
+  const criteria = await res.json();
+  document.getElementById('criteriaText').value = JSON.stringify(criteria, null, 2);
+  document.getElementById('criteriaDialog').showModal();
 }
 
 async function saveCriteria() {
-  const statusEl = document.getElementById('criteriaStatus');
   let parsed;
   try {
     parsed = JSON.parse(document.getElementById('criteriaText').value);
   } catch (e) {
-    statusEl.textContent = 'Invalid JSON — fix syntax and try again.';
+    toast('Invalid JSON — fix syntax and try again.', 'error');
     return;
   }
-  statusEl.textContent = 'Saving…';
   const res = await fetch('/criteria', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ questions: parsed }),
   });
-  statusEl.textContent = res.ok
-    ? 'Saved. New criteria apply on the next Refetch.'
-    : 'Save failed — check the server terminal.';
+  if (res.ok) {
+    toast('Criteria saved. Apply on next Refetch.', 'success');
+    document.getElementById('criteriaDialog').close();
+  } else {
+    toast('Save failed — check the server terminal.', 'error');
+  }
 }
 
 document.getElementById('refreshBtn').addEventListener('click', refetchJobs);
-document.getElementById('toggleProfileBtn').addEventListener('click', toggleProfilePanel);
-document.getElementById('toggleCriteriaBtn').addEventListener('click', toggleCriteriaPanel);
+document.getElementById('profileBtn').addEventListener('click', openProfileDialog);
+document.getElementById('criteriaBtn').addEventListener('click', openCriteriaDialog);
 document.getElementById('saveProfileBtn').addEventListener('click', saveProfile);
 document.getElementById('saveCriteriaBtn').addEventListener('click', saveCriteria);
 document.getElementById('hideSpam').addEventListener('change', render);
 document.getElementById('onlyRelevant').addEventListener('change', render);
 
+// Close buttons inside dialogs
+document.querySelectorAll('[data-close]').forEach(btn => {
+  btn.addEventListener('click', () => btn.closest('dialog').close());
+});
+
 loadJobs();
-</script>    
+</script>
 </body>
 </html>
