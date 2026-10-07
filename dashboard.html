@@ -6,7 +6,11 @@
 <style>
   body { font-family: -apple-system, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 16px; background: #fafafa; color: #1a1a1a; }
   h1 { font-size: 1.4rem; }
-  .controls { margin-bottom: 20px; display: flex; gap: 12px; align-items: center; }
+  .toolbar { margin-bottom: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  button { padding: 8px 14px; border: 1px solid #ccc; border-radius: 6px; background: white; cursor: pointer; font-size: 0.9rem; }
+  button:hover { background: #f0f0f0; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  #status { font-size: 0.85rem; color: #666; }
   .job { background: white; border: 1px solid #e2e2e2; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
   .job h3 { margin: 0 0 4px 0; }
   .job h3 a { color: #1a1a1a; text-decoration: none; }
@@ -18,39 +22,105 @@
   .tag.mid { background: #d6f0ff; }
   .tag.junior { background: #e0ffe0; }
   .tag.remote { background: #d9f2d9; }
-  .spam { opacity: 0.5; }
   #empty { color: #888; padding: 40px 0; text-align: center; }
+  .panel { display: none; background: white; border: 1px solid #e2e2e2; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+  .panel textarea { width: 100%; height: 260px; font-family: monospace; font-size: 0.8rem; box-sizing: border-box; }
+  .panel-actions { margin-top: 10px; display: flex; gap: 10px; align-items: center; }
+  .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+  .field label { font-size: 0.8rem; color: #444; font-weight: 500; }
+  .field input { padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; }
+  .field-row { display: flex; gap: 12px; }
+  .field-row .field { flex: 1; }
+
+  #progressWrap { display: none; height: 4px; background: #e2e2e2; border-radius: 2px; overflow: hidden; margin-bottom: 12px; }
+  #progressBar { height: 100%; width: 40%; background: #4a90e2; border-radius: 2px; animation: indeterminate 1.2s ease-in-out infinite; }
+  @keyframes indeterminate {
+    0%   { transform: translateX(-100%); }
+    50%  { transform: translateX(100%); }
+    100% { transform: translateX(250%); }
+  }
 </style>
 </head>
 <body>
   <h1>Filtered Job Listings</h1>
-  <div class="controls">
+
+  <div id="progressWrap"><div id="progressBar"></div></div>
+
+  <div class="toolbar">
+    <button id="refreshBtn">Refetch Jobs</button>
+    <button id="toggleProfileBtn">Search Profile</button>
+    <button id="toggleCriteriaBtn">Edit Criteria</button>
     <label><input type="checkbox" id="hideSpam" checked> Hide recruiter spam</label>
     <label><input type="checkbox" id="onlyRelevant" checked> Only relevant roles</label>
+    <span id="status"></span>
   </div>
+
+  <div class="panel" id="profilePanel">
+    <p style="margin-top:0; font-size:0.85rem; color:#555;">
+      What to search for on Adzuna. Changes apply on the next Refetch.
+    </p>
+    <div class="field">
+      <label for="profileWhat">Job title / keywords</label>
+      <input type="text" id="profileWhat" placeholder="e.g. backend developer, react developer">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="profileWhere">Location</label>
+        <input type="text" id="profileWhere" placeholder="e.g. kochi, remote, bangalore">
+      </div>
+      <div class="field">
+        <label for="profileMaxDays">Max days old</label>
+        <input type="number" id="profileMaxDays" min="1" max="365" value="30">
+      </div>
+    </div>
+    <div class="panel-actions">
+      <button id="saveProfileBtn">Save Profile</button>
+      <span id="profileStatus" style="font-size:0.85rem; color:#666;"></span>
+    </div>
+  </div>
+
+  <div class="panel" id="criteriaPanel">
+    <p style="margin-top:0; font-size:0.85rem; color:#555;">
+      Edit the questions Laya asks about each job (JSON). Each key needs
+      <code>type</code> ("noul" or "choice") and <code>instructions</code>;
+      "choice" also needs a <code>criteria</code> object of option: description.
+    </p>
+    <textarea id="criteriaText"></textarea>
+    <div class="panel-actions">
+      <button id="saveCriteriaBtn">Save Criteria</button>
+      <span id="criteriaStatus" style="font-size:0.85rem; color:#666;"></span>
+    </div>
+  </div>
+
   <div id="jobs"></div>
-  <div id="empty" style="display:none">No jobs match. Run <code>python ingest.py</code> first, and serve this folder (e.g. <code>python -m http.server</code>) so jobs.json can load.</div>
+  <div id="empty" style="display:none">No jobs match yet. Click "Refetch Jobs" to pull listings.</div>
 
 <script>
+let allJobs = [];
+
 async function loadJobs() {
-  try {
-    const res = await fetch('jobs.json');
-    return await res.json();
-  } catch (e) {
-    return [];
-  }
+  const res = await fetch('/jobs');
+  allJobs = await res.json();
+  render();
 }
 
-function render(jobs) {
+async function loadProfile() {
+  const res = await fetch('/profile');
+  const profile = await res.json();
+  document.getElementById('profileWhat').value = profile.what || '';
+  document.getElementById('profileWhere').value = profile.where || '';
+  document.getElementById('profileMaxDays').value = profile.max_days_old || 30;
+}
+
+function render() {
   const hideSpam = document.getElementById('hideSpam').checked;
   const onlyRelevant = document.getElementById('onlyRelevant').checked;
 
-  let filtered = jobs.filter(j => {
+  let filtered = allJobs.filter(j => {
     if (hideSpam && j.recruiter_spam > 0.5) return false;
     if (onlyRelevant && j.relevant < 0.5) return false;
     return true;
   });
-
   filtered.sort((a, b) => (b.relevant || 0) - (a.relevant || 0));
 
   const container = document.getElementById('jobs');
@@ -68,19 +138,110 @@ function render(jobs) {
       <h3><a href="${j.url}" target="_blank">${j.title}</a></h3>
       <div class="meta">${j.company} · ${j.location} · ${j.created ? j.created.split('T')[0] : ''}</div>
       <div class="tags">
-        <span class="tag ${j.seniority}">${j.seniority}</span>
+        <span class="tag ${j.seniority || ''}">${j.seniority || '?'}</span>
         ${j.remote > 0.5 ? '<span class="tag remote">remote-friendly</span>' : ''}
-        <span class="tag">relevance ${(j.relevant * 100).toFixed(0)}%</span>
+        <span class="tag">relevance ${((j.relevant || 0) * 100).toFixed(0)}%</span>
       </div>
     </div>
   `).join('');
 }
 
-loadJobs().then(jobs => {
-  render(jobs);
-  document.getElementById('hideSpam').addEventListener('change', () => render(jobs));
-  document.getElementById('onlyRelevant').addEventListener('change', () => render(jobs));
-});
-</script>
+async function refetchJobs() {
+  const btn = document.getElementById('refreshBtn');
+  const status = document.getElementById('status');
+  const progress = document.getElementById('progressWrap');
+
+  btn.disabled = true;
+  progress.style.display = 'block';
+  status.textContent = 'Fetching and classifying… this can take a few seconds.';
+
+  const startedAt = Date.now();
+  try {
+    const res = await fetch('/refresh', { method: 'POST' });
+    const result = await res.json();
+    const elapsed = ((Date.now() - startedAt) / 1000).toFixed(1);
+    status.textContent = `Fetched ${result.fetched}, added ${result.added} new. Total: ${result.total}. Took ${elapsed}s.`;
+    await loadJobs();
+  } catch (e) {
+    status.textContent = 'Refresh failed — check the server terminal.';
+  } finally {
+    btn.disabled = false;
+    progress.style.display = 'none';
+  }
+}
+
+function togglePanel(id) {
+  const panel = document.getElementById(id);
+  const isHidden = panel.style.display === 'none' || !panel.style.display;
+  panel.style.display = isHidden ? 'block' : 'none';
+  return isHidden;
+}
+
+async function toggleProfilePanel() {
+  const shown = togglePanel('profilePanel');
+  if (shown) await loadProfile();
+}
+
+async function toggleCriteriaPanel() {
+  const shown = togglePanel('criteriaPanel');
+  if (shown) {
+    const res = await fetch('/criteria');
+    const criteria = await res.json();
+    document.getElementById('criteriaText').value = JSON.stringify(criteria, null, 2);
+  }
+}
+
+async function saveProfile() {
+  const statusEl = document.getElementById('profileStatus');
+  const payload = {
+    what: document.getElementById('profileWhat').value.trim(),
+    where: document.getElementById('profileWhere').value.trim(),
+    max_days_old: parseInt(document.getElementById('profileMaxDays').value, 10) || 30,
+  };
+  if (!payload.what) {
+    statusEl.textContent = 'Job title / keywords is required.';
+    return;
+  }
+  statusEl.textContent = 'Saving…';
+  const res = await fetch('/profile', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  statusEl.textContent = res.ok
+    ? 'Saved. Click Refetch to pull new listings with this profile.'
+    : 'Save failed — check the server terminal.';
+}
+
+async function saveCriteria() {
+  const statusEl = document.getElementById('criteriaStatus');
+  let parsed;
+  try {
+    parsed = JSON.parse(document.getElementById('criteriaText').value);
+  } catch (e) {
+    statusEl.textContent = 'Invalid JSON — fix syntax and try again.';
+    return;
+  }
+  statusEl.textContent = 'Saving…';
+  const res = await fetch('/criteria', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ questions: parsed }),
+  });
+  statusEl.textContent = res.ok
+    ? 'Saved. New criteria apply on the next Refetch.'
+    : 'Save failed — check the server terminal.';
+}
+
+document.getElementById('refreshBtn').addEventListener('click', refetchJobs);
+document.getElementById('toggleProfileBtn').addEventListener('click', toggleProfilePanel);
+document.getElementById('toggleCriteriaBtn').addEventListener('click', toggleCriteriaPanel);
+document.getElementById('saveProfileBtn').addEventListener('click', saveProfile);
+document.getElementById('saveCriteriaBtn').addEventListener('click', saveCriteria);
+document.getElementById('hideSpam').addEventListener('change', render);
+document.getElementById('onlyRelevant').addEventListener('change', render);
+
+loadJobs();
+</script>    
 </body>
 </html>

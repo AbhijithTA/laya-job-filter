@@ -238,5 +238,17 @@
     "seniority": "mid",
     "remote": 0.6395,
     "recruiter_spam": 0.8809
+  },
+  {
+    "title": "React Node Js Developer",
+    "company": "Infosys Limited",
+    "location": "Thiruvananthapuram, Kerala",
+    "url": "https://www.adzuna.in/details/5915005340?utm_medium=api&utm_source=f1dd5600",
+    "created": "2026-10-07T07:49:59Z",
+    "description": "Job Description: We are looking for a highly motivated React js Node js Developer with 2 3 years of experience in designing developing and maintaining scalable web applications The ideal candidate should possess strong expertise in front end development using React js and back end development using Node js with experience in building end to end solutions in an Agile environment Key Responsibilities: Develop responsive and user friendly web applications using React js Design and develop scalable\u2026",
+    "relevant": 0.8633,
+    "seniority": "senior",
+    "remote": 0.5826,
+    "recruiter_spam": 0.8419
   }
 ]

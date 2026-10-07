@@ -1,0 +1,23 @@
+{
+  "relevant": {
+    "type": "noul",
+    "instructions": "Is this job posting genuinely about software development, engineering, or a closely related technical role \u2014 as opposed to sales, marketing, management, or unrelated fields?"
+  },
+  "seniority": {
+    "type": "choice",
+    "instructions": "What seniority level does this role require?",
+    "criteria": {
+      "junior": "0-2 years experience, junior/associate/trainee/entry-level titles",
+      "mid": "2-5 years experience, no seniority qualifier in title",
+      "senior": "5+ years experience, senior/lead/principal/staff/architect titles"
+    }
+  },
+  "remote": {
+    "type": "noul",
+    "instructions": "Does this posting explicitly offer remote or hybrid-remote work?"
+  },
+  "recruiter_spam": {
+    "type": "noul",
+    "instructions": "Is this a vague staffing-agency post with no real company or project details, as opposed to a genuine listing from a specific company?"
+  }
+}
